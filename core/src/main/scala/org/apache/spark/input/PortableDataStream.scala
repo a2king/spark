@@ -45,8 +45,13 @@ private[spark] abstract class StreamFileInputFormat[T]
    * which is set through setMaxSplitSize
    */
   def setMinPartitions(sc: SparkContext, context: JobContext, minPartitions: Int): Unit = {
+    // 获取配置spark.files.maxPartitionBytes
+    // 【读取文件时打包到单个分区中的最大字节数，default: 128 * 1024 * 1024=128M 】
     val defaultMaxSplitBytes = sc.getConf.get(config.FILES_MAX_PARTITION_BYTES)
+    // 获取配置spark.files.openCostInBytes
+    // [打开小文件的估计成本,文件大小低于该值时,将合并到同个RDD分区,因此可以适当提高该值来合并小文件,default: 4 * 1024 * 1024=4M ]
     val openCostInBytes = sc.getConf.get(config.FILES_OPEN_COST_IN_BYTES)
+    // 获取默认分区数
     val defaultParallelism = Math.max(sc.defaultParallelism, minPartitions)
     val files = listStatus(context).asScala
     val totalBytes = files.filterNot(_.isDirectory).map(_.getLen + openCostInBytes).sum
